@@ -2,7 +2,7 @@
 % Please edit documentation in R/fetch.R
 \name{fetch_nrel_data}
 \alias{fetch_nrel_data}
-\title{Title}
+\title{Fetch (request and download) data from NREL}
 \usage{
 fetch_nrel_data(lon, lat, api_url = NULL, as = "raw", ...)
 }
@@ -11,12 +11,12 @@ fetch_nrel_data(lon, lat, api_url = NULL, as = "raw", ...)
 
 \item{lat}{vector with latitude coordinate(s)}
 
-\item{api_url}{character string with the API url}
+\item{api_url}{character string with the url-address to a particular dataset}
 
-\item{as}{httpr parameter}
+\item{as}{httr parameter}
 
-\item{...}{other attributes for the API query}
+\item{...}{attributes for the API query}
 }
 \description{
-Title
+Fetch (request and download) data from NREL
 }

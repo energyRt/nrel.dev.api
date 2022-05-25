@@ -1,10 +1,10 @@
-#' Title
+#' Fetch (request and download) data from NREL
 #'
 #' @param lon vector with longitude coordinate(s)
 #' @param lat vector with latitude coordinate(s)
-#' @param api_url character string with the API url
-#' @param as httpr parameter
-#' @param ... other attributes for the API query
+#' @param api_url character string with the url-address to a particular dataset
+#' @param as httr parameter
+#' @param ... attributes for the API query
 #'
 #' @return
 #' @export
@@ -44,8 +44,6 @@ if (F) {
                        names = "2014")
   x$status_code
 }
-
-
 
 #' Get NREL's API addresses by the database name
 #'

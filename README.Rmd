@@ -14,17 +14,18 @@ knitr::opts_chunk$set(
 ```
 
 # nrel.dev.api
-
+R package to access data from NREL (National Renewable Energy Lab) [developer network.](https://developer.nrel.gov/)
 <!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![CRAN status](https://www.r-pkg.org/badges/version/nrel.dev.api)](https://CRAN.R-project.org/package=nrel.dev.api)
+
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) [![CRAN status](https://www.r-pkg.org/badges/version/nrel.dev.api)](https://CRAN.R-project.org/package=nrel.dev.api)
+
 <!-- badges: end -->
 
 The goal of nrel.dev.api is to ...
 
 ## Installation
 
-You can install the development version of nrel.dev.api from [GitHub](https://github.com/) with:
+You can install the development version of nrel.dev.api from [GitHub](https://github.com/energyRt) with:
 
 ``` r
 # install.packages("devtools")
@@ -33,25 +34,31 @@ devtools::install_github("energyRt/nrel.dev.api")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+Register at <https://developer.nrel.gov/> to get API key for your email address.
 
-```{r example}
+```{r example, eval=FALSE}
 library(nrel.dev.api)
-## basic example code
+
+# to save your credentials (do once)
+set_nrel_api_key(nrel.api.email = "YOUR_EMAIL", nrel.api.key = "YOUR_NREL_API_KEY")
+# to retrieve
+x <- get_nrel_api_email()
+x
+get_nrel_api_key(invisible = FALSE)
+# get url address by the dataset name
+get_nrel_url() 
+# fetch/download the data
+x <- fetch_nrel_data(
+  lon = 75.36621, lat = 24.72687,
+  api_url = get_nrel_url("india-wind"),
+  attributes = "windspeed_40m,windspeed_80m,windspeed_100m,windspeed_120m",
+  interval = 15,
+  names = "2014")
+x
+
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+## References
+1. NREL developer network // <https://developer.nrel.gov/>
+2. Alternative API in Python // <https://pypi.org/project/nrel-dev-api/>
 
-```{r cars}
-summary(cars)
-```
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/v1/examples>.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
