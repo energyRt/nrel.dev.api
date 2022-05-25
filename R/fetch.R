@@ -37,12 +37,18 @@ fetch_nrel_data <- function(lon, lat, api_url = NULL, as = "raw", ...) {
 }
 
 if (F) {
-  x <- fetch_nrel_data(lon = 75.36621, lat = 24.72687,
+  x <- fetch_nrel_data(lon = 80, lat = 15,
                        api_url = get_nrel_url("india-wind"),
                        attributes = "windspeed_40m,windspeed_80m,windspeed_100m,windspeed_120m",
                        interval = 15,
-                       names = "2014")
+                       names = "2014", as = "parsed")
   x$status_code
+
+  y <- httr::content(x, "text")
+  write.csv(y, "tmp/test_file.csv")
+  library(data.table)
+  fread("tmp/test_file.csv", skip = 4)
+
 }
 
 #' Get NREL's API addresses by the database name
