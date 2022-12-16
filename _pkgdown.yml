@@ -13,6 +13,10 @@ template:
     ganalytics: G-CYBYJ238Q5
     # https://bootswatch.com/sketchy/
     # bootswatch: yeti
-#    bootstrap: 5
-#    bootswatch: cerulean
-#    bootswatch: cosmo
+    # bootswatch: cerulean
+    # bootswatch: cosmo
+
+navbar:
+  structure:
+    # left:  [intro, reference, articles, tutorials, news]
+    right: [search, github]
