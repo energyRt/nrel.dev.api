@@ -3,7 +3,7 @@
 
 # nrel.dev.api
 
-R package to access data from NREL (National Renewable Energy Lab)
+R package to access data from National Renewable Energy Lab (NREL)
 [developer network.](https://developer.nrel.gov/) <!-- badges: start -->
 
 [![Lifecycle:
@@ -17,7 +17,9 @@ status](https://www.r-pkg.org/badges/version/nrel.dev.api)](https://CRAN.R-proje
 
 <img src="man/figures/collections/fig_00_total.png" width="100%" />
 
-The goal of nrel.dev.api is to …
+The goal of `nrel.dev.api` is to provide R-native access to NREL’s
+renewable energy sources data-sets using the [NREL Developer Network
+API](https://developer.nrel.gov/).
 
 ## Installation
 
