@@ -7,9 +7,11 @@ development:
   version_label: info
 
 template:
+  bootstrap: 5
+  bootswatch: spacelab
   params:
     ganalytics: G-CYBYJ238Q5
-    bootswatch: cerulean
+    # https://bootswatch.com/sketchy/
     # bootswatch: yeti
 #    bootstrap: 5
 #    bootswatch: cerulean
