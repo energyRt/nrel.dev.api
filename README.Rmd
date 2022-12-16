@@ -29,8 +29,10 @@ R package to access data from National Renewable Energy Lab (NREL) [developer ne
 
 <!-- ![datasets](man/figures/collections/fig_00_total.png){#id .class width=50% height=50%} -->
 
+[![Data availability by collections and, geographic scope](man/figures/collections/fig_00_total.png)](https://energyrt.github.io/nrel.dev.api/articles/datasets.html#data-availability-by-collections)
+
 ```{r fig_00_total.png, echo = FALSE}
-knitr::include_graphics("man/figures/collections/fig_00_total.png")
+# knitr::include_graphics("man/figures/collections/fig_00_total.png")
 ```
 
 

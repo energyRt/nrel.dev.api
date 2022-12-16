@@ -15,7 +15,8 @@ status](https://www.r-pkg.org/badges/version/nrel.dev.api)](https://CRAN.R-proje
 <!-- ## Overview of NREL data-collections -->
 <!-- ![datasets](man/figures/collections/fig_00_total.png){#id .class width=50% height=50%} -->
 
-<img src="man/figures/collections/fig_00_total.png" width="100%" />
+[![Data availability by collections and, geographic
+scope](man/figures/collections/fig_00_total.png)](https://energyrt.github.io/nrel.dev.api/articles/datasets.html#data-availability-by-collections)
 
 The goal of `nrel.dev.api` is to provide R-native access to NREL’s
 renewable energy sources data-sets using the [NREL Developer Network
