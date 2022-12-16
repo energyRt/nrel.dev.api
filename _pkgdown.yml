@@ -1,4 +1,16 @@
 url: https://energyrt.github.io/nrel.dev.api/
-template:
-  bootstrap: 5
 
+title: nrel.dev.api
+
+development:
+  mode: unreleased
+  version_label: info
+
+template:
+  params:
+    ganalytics: G-CYBYJ238Q5
+    bootswatch: cerulean
+    # bootswatch: yeti
+#    bootstrap: 5
+#    bootswatch: cerulean
+#    bootswatch: cosmo

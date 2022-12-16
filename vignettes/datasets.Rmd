@@ -32,6 +32,6 @@ fld <- "../man/figures/collections/"
 # imgs <- paste0("../images/poa_pvwatts_merra/", sample(list.files(fld), 5))
 imgs <- file.path(fld, list.files(fld))
 # imgs <- paste0("images/", list.files(fld))
-EBImage::display(readImage(imgs), method = "browser")
+EBImage::display(readImage(imgs), method = "browser", width = 1200, height = 820)
 ```
 
