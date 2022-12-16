@@ -62,7 +62,7 @@ if (F) {
 get_nrel_url <- function(x) {
   # browser()
   if (grepl("^site.count$", x, ignore.case = T))
-    return("https://developer.nrel.gov/api/wind-toolkit/v2/site-count.csv")
+    return("https://developer.nrel.gov/api/wind-toolkit/v2/site-count.json")
   if (grepl("^india.wind$", x, ignore.case = T))
     return("https://developer.nrel.gov/api/wind-toolkit/v2/wind/india-wind-download.csv")
 }
@@ -71,4 +71,10 @@ if (F) {
   get_nrel_url("site-count")
   get_nrel_url("site count")
   get_nrel_url("India wind")
+}
+
+
+scan_site_counts <- function(x, verbose = TRUE) {
+
+
 }

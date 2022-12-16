@@ -1,5 +1,8 @@
 ---
+# title: nrel.dev.api
+# output: html_document
 output: github_document
+always_allow_html: true
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -8,18 +11,29 @@ output: github_document
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  fig.path = "man/figures/README-",
+  fig.path = "man/figures/",
+  # fig.path = "man/figures/README-",
   out.width = "100%"
 )
 ```
 
 # nrel.dev.api
-R package to access data from NREL (National Renewable Energy Lab) [developer network.](https://developer.nrel.gov/)
-<!-- badges: start -->
+
+R package to access data from NREL (National Renewable Energy Lab) [developer network.](https://developer.nrel.gov/) <!-- badges: start -->
 
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) [![CRAN status](https://www.r-pkg.org/badges/version/nrel.dev.api)](https://CRAN.R-project.org/package=nrel.dev.api)
 
 <!-- badges: end -->
+
+<!-- ## Overview of NREL data-collections -->
+
+<!-- ![datasets](man/figures/collections/fig_00_total.png){#id .class width=50% height=50%} -->
+
+```{r fig_00_total.png, echo = FALSE}
+knitr::include_graphics("man/figures/collections/fig_00_total.png")
+```
+
+
 
 The goal of nrel.dev.api is to ...
 
@@ -46,7 +60,7 @@ x <- get_nrel_api_email()
 x
 get_nrel_api_key(invisible = FALSE)
 # get url address by the dataset name
-get_nrel_url() 
+get_nrel_url("india-wind") 
 # fetch/download the data
 x <- fetch_nrel_data(
   lon = 75.36621, lat = 24.72687,
@@ -58,7 +72,9 @@ x
 
 ```
 
-## References
-1. NREL developer network // <https://developer.nrel.gov/>
-2. Alternative API in Python // <https://pypi.org/project/nrel-dev-api/>
 
+
+## References
+
+1.  NREL developer network // <https://developer.nrel.gov/>
+2.  Alternative API in Python // <https://pypi.org/project/nrel-dev-api/>

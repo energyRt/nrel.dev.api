@@ -12,6 +12,10 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 status](https://www.r-pkg.org/badges/version/nrel.dev.api)](https://CRAN.R-project.org/package=nrel.dev.api)
 
 <!-- badges: end -->
+<!-- ## Overview of NREL data-collections -->
+<!-- ![datasets](man/figures/collections/fig_00_total.png){#id .class width=50% height=50%} -->
+
+<img src="man/figures/collections/fig_00_total.png" width="100%" />
 
 The goal of nrel.dev.api is to …
 
@@ -40,7 +44,7 @@ x <- get_nrel_api_email()
 x
 get_nrel_api_key(invisible = FALSE)
 # get url address by the dataset name
-get_nrel_url() 
+get_nrel_url("india-wind") 
 # fetch/download the data
 x <- fetch_nrel_data(
   lon = 75.36621, lat = 24.72687,
