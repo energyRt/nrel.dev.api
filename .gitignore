@@ -41,5 +41,5 @@ vignettes/*.pdf
 
 # Other
 /tmp/
-docs
-inst/doc
+#docs
+#inst/doc
