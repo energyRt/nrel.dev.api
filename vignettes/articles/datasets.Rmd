@@ -1,12 +1,5 @@
 ---
-title: "NREL datasets"
-output: rmarkdown::html_vignette
-header-includes:
-   - \usepackage{amsmath}
-vignette: >
-  %\VignetteIndexEntry{datasets}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+title: "datasets"
 ---
 
 ```{r, include = FALSE}
@@ -16,7 +9,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup, echo=FALSE, include=FALSE}
+```{r setup}
 library(nrel.dev.api)
 ```
 
@@ -27,7 +20,7 @@ library(nrel.dev.api)
 # install.packages("BiocManager")
 # BiocManager::install("EBImage")
 library("EBImage")
-fld <- "../man/figures/collections/"
+fld <- "../../man/figures/collections/"
 
 # imgs <- paste0("../images/poa_pvwatts_merra/", sample(list.files(fld), 5))
 imgs <- file.path(fld, list.files(fld))
@@ -36,4 +29,3 @@ imgs <- file.path(fld, list.files(fld))
 EBImage::display(readImage(imgs), method = "browser", width = 1000, height = 700)
 # EBImage::display(readImage(imgs), method = "browser", width = 800, height = .7*800)
 ```
-

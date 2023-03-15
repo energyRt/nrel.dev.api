@@ -26,6 +26,7 @@ set_nrel_api_key <- function(nrel.api.email, nrel.api.key) {
     paste0("options(nrel.api.email = '", nrel.api.email, "')"),
     paste0("options(nrel.api.key = '", nrel.api.key, "')")),
     con)
+  source("~/.nrel.dev.api")
   close(con)
 }
 

@@ -10,7 +10,8 @@ Authors@R:
 Description: A few functions to download renewables' data from NREL via API.
 License: AGLP-3.0
 Imports:
-    httr
+    httr,
+    installr
 Suggests: 
     knitr,
     rmarkdown,

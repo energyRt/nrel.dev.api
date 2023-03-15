@@ -43,3 +43,4 @@ vignettes/*.pdf
 /tmp/
 #docs
 #inst/doc
+inst/doc

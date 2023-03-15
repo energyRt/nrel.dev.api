@@ -4,10 +4,16 @@
     <loc>https://energyrt.github.io/nrel.dev.api/404.html</loc>
   </url>
   <url>
+    <loc>https://energyrt.github.io/nrel.dev.api/articles/articles/datasets.html</loc>
+  </url>
+  <url>
     <loc>https://energyrt.github.io/nrel.dev.api/articles/datasets.html</loc>
   </url>
   <url>
     <loc>https://energyrt.github.io/nrel.dev.api/articles/index.html</loc>
+  </url>
+  <url>
+    <loc>https://energyrt.github.io/nrel.dev.api/articles/nrel-dev-api.html</loc>
   </url>
   <url>
     <loc>https://energyrt.github.io/nrel.dev.api/authors.html</loc>
@@ -22,6 +28,9 @@
     <loc>https://energyrt.github.io/nrel.dev.api/LICENSE.html</loc>
   </url>
   <url>
+    <loc>https://energyrt.github.io/nrel.dev.api/reference/fetch_data_from_grid.html</loc>
+  </url>
+  <url>
     <loc>https://energyrt.github.io/nrel.dev.api/reference/fetch_nrel_data.html</loc>
   </url>
   <url>
@@ -34,7 +43,16 @@
     <loc>https://energyrt.github.io/nrel.dev.api/reference/get_nrel_url.html</loc>
   </url>
   <url>
+    <loc>https://energyrt.github.io/nrel.dev.api/reference/guess_nrel_grid.html</loc>
+  </url>
+  <url>
     <loc>https://energyrt.github.io/nrel.dev.api/reference/index.html</loc>
+  </url>
+  <url>
+    <loc>https://energyrt.github.io/nrel.dev.api/reference/nrel_read_meta.html</loc>
+  </url>
+  <url>
+    <loc>https://energyrt.github.io/nrel.dev.api/reference/nrel_read_responce.html</loc>
   </url>
   <url>
     <loc>https://energyrt.github.io/nrel.dev.api/reference/set_nrel_api_key.html</loc>
