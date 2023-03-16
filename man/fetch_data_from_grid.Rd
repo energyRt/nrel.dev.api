@@ -6,25 +6,46 @@
 \usage{
 fetch_data_from_grid(
   grid_sf,
-  cells = NULL,
-  nmax = 100,
-  plot_process = T,
-  file_name = NULL,
-  sleep_after_finish = FALSE
+  randomize = TRUE,
+  continue = TRUE,
+  save_by = 100,
+  save_dir = NULL,
+  file_prefix = NULL,
+  verbose = TRUE,
+  plot_process = TRUE,
+  limit = 10000,
+  sleep_after_finish = FALSE,
+  api_url = NULL,
+  collection = "wtk",
+  ...
 )
 }
 \arguments{
 \item{grid_sf}{sf object with coordinates of points to download}
 
-\item{cells}{integer sequence of row-numbers in \code{grid_sf} object}
+\item{randomize}{logical, random sampling of locations}
 
-\item{nmax}{integer maximum number of data-points to download}
+\item{continue}{logical, should the process continue (based on info in the \code{grid_sf})}
+
+\item{save_by}{integer, saving the data by sample of this size}
+
+\item{save_dir}{directory to save the data}
+
+\item{file_prefix}{prefix to file names}
+
+\item{verbose}{should the process be reported to console}
 
 \item{plot_process}{logical, should the process be visualized}
 
-\item{file_name}{file name with path, if provided, the results will be saved in the file. Otherwise, results will be returned to global environment.}
+\item{limit}{maximum number of queries to NREL}
 
-\item{sleep_when_done}{logical, if TRUE, puts the computer to sleep when done}
+\item{sleep_after_finish}{logical, system sleep/hibernation after finishing}
+
+\item{api_url}{url of NREL's collection}
+
+\item{collection}{collection short name (not all available yet)}
+
+\item{...}{parameters/attributes for the query (passed to \code{fetch_nrel_data})}
 }
 \description{
 Download data from NREL using grid of points.

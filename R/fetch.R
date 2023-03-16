@@ -78,12 +78,6 @@ if (F) {
 }
 
 
-scan_site_counts <- function(x, verbose = TRUE) {
-
-
-}
-
-
 #' Extract meta-data from NREL's API response
 #'
 #' @param x
@@ -151,81 +145,169 @@ nrel_read_responce <- function(x) {
 #' Download data from NREL using grid of points.
 #'
 #' @param grid_sf sf object with coordinates of points to download
-#' @param cells integer sequence of row-numbers in `grid_sf` object
-#' @param nmax integer maximum number of data-points to download
+#' @param randomize logical, random sampling of locations
+#' @param continue logical, should the process continue (based on info in the `grid_sf`)
+#' @param save_by integer, saving the data by sample of this size
+#' @param save_dir directory to save the data
+#' @param file_prefix prefix to file names
+#' @param verbose should the process be reported to console
+#' @param limit maximum number of queries to NREL
+#' @param sleep_after_finish logical, system sleep/hibernation after finishing
+#' @param api_url url of NREL's collection
+#' @param collection collection short name (not all available yet)
+#' @param ... parameters/attributes for the query (passed to `fetch_nrel_data`)
 #' @param plot_process logical, should the process be visualized
-#' @param file_name file name with path, if provided, the results will be saved in the file. Otherwise, results will be returned to global environment.
-#' @param sleep_when_done logical, if TRUE, puts the computer to sleep when done
 #'
 #' @return
 #' @export
 #'
 #' @examples
-fetch_data_from_grid <- function(grid_sf, cells = NULL, nmax = 100, plot_process = T,
-                            file_name = NULL,
-                            sleep_after_finish = FALSE) {
-  N <- nrow(grid_sf)
+fetch_data_from_grid <- function(grid_sf,
+                                 randomize = TRUE,
+                                 continue = TRUE,
+                                 save_by = 100,
+                                 save_dir = NULL,
+                                 file_prefix = NULL,
+                                 verbose = TRUE,
+                                 plot_process = TRUE,
+                                 limit = 1e4,
+                                 sleep_after_finish = FALSE,
+                                 api_url = NULL, collection = "wtk",
+                                 ...
+                                 ) {
+  if (is.null(api_url)) {
+    q_api_url <- get_nrel_url(collection)
+  } else {
+    q_api_url <- api_url
+  }
+  # browser()
+  if (is.null(grid_sf$index)) {
+    idx <- 1:nrow(grid_sf)
+    grid_sf <- grid_sf %>% mutate(index = idx, .before = 1)
+  }
+  if (is.null(grid_sf$fetched)) {
+    grid_sf <- grid_sf %>% mutate(fetched = FALSE, .after = "index")
+  }
+  if (is.null(grid_sf$nrel_lon)) {
+    grid_sf <- grid_sf %>% mutate(nrel_lon = as.numeric(NA), .after = "fetched")
+  }
+  if (is.null(grid_sf$nrel_lat)) {
+    grid_sf <- grid_sf %>% mutate(nrel_lat = as.numeric(NA), .after = "nrel_lon")
+  }
+  if (is.null(grid_sf$file)) {
+    grid_sf <- grid_sf %>% mutate(file = as.character(NA), .after = "nrel_lat")
+  }
+  if (!continue) {
+    grid_sf$fetched <- FALSE
+    grid_sf$file <- as.character(NA)
+  }
+  N <- sum(!grid_sf$fetched)
+  NF <- sum(grid_sf$fetched)
   # if (!exists("RND")) RND <- sample(1:N, N)
   # unique(RND) %>% length(); N
-  if (is.null(cells)) {
-    RND <- 1:min(nmax, nrow(grid_sf))
-  } else {
-    RND <- cells
-  }
+
+  RND <- grid_sf$index[!grid_sf$fetched]
+  if (randomize) RND <- sample(RND, length(RND), replace = FALSE)
+  RND <- RND[1:min(length(RND), limit)]
+
+  NN <- ceiling(length(RND) / save_by)
+  # if (is.null(cells)) {
+  #   RND <- 1:min(nmax, N)
+  # } else {
+  #   RND <- cells
+  # }
+  # N <- nmax <- length(RND)
 
   # if (!exists("ll"))
-  ll <- list()
+
+  if (verbose) {
+    cat("Total points (locations) in the grid:", nrow(grid_sf), "\n")
+    cat("Points to attempt to download:", N, "\n")
+    cat("Estimated number of files:", NN, "\n")
+  }
+
+  if (!dir.exists(save_dir)) {
+    cat("Creating directory:", save_dir, "\n")
+    dir.create(save_dir)
+  }
+
   coo <- st_coordinates(grid_sf) %>% as.data.table()
-  coo
+  # coo
   if (plot_process) {
     par("mai") # 1.02 0.82 0.82 0.42
     par(mai = rep(0, 4))
-    plot(grid_sf, pch = ".")
+    plot(st_geometry(grid_sf), pch = ".", col = "darkgrey")
+    if (any(grid_sf$fetched)) {
+      plot(st_geometry(grid_sf[grid_sf$fetched, ]), pch = 16, cex = .4,
+           col = "green3", add = T)
+    }
   }
-
-  for (i in (length(ll) + 1):N) {
-    n <- RND[i]
-    cat(i, n, "")
-    ll[[i]] <- fetch_nrel_data(
-      lon = coo$X[n], lat = coo$Y[n],
-      api_url = q_api_url, attributes = q_atributes,
-      interval = q_interval, names = q_names, as = "raw")
-    if (as.numeric(ll[[i]]$status_code) != 200) {
-      message(paste("status_code =", ll[[i]]$status_code))
-      Sys.sleep(10)
+  # coo <- coo[!grid_sf$fetched,]
+  # browser()
+  for (nn in 0:(NN - 1)) {
+    ids <- (nn * save_by + 1):min(((nn + 1) * save_by), nrow(grid_sf), length(RND))
+    fname <- file.path(save_dir,
+                       paste0(file_name, "_",
+                              formatC(min(ids) + NF, width = 5, flag = "0"),
+                              "_",
+                              formatC(max(ids) + NF, width = 5, flag = "0"),
+                              ".RData"))
+    if (file.exists(fname)) {
+      fname <- gsub(".RData$", paste0(" (", format(Sys.time()), ").RData"), fname)
+    }
+    ll <- list()
+    # for (i in (length(ll) + 1):N) {
+    cat(" # | index | status | ratelimit-remaining\n")
+    for (i in ids) {
+      n <- RND[i]
+      cat(i, "|" , n, "|")
+      # browser()
       ll[[i]] <- fetch_nrel_data(
-        lon = coo$X[n], lat = coo$Y[n],
-        api_url = q_api_url, attributes = q_atributes,
-        interval = q_interval, names = q_names, as = "raw")
-    }
-    if (as.numeric(ll[[i]]$status_code) == 200) {
-      lmt <- ll[[i]]$all_headers[[1]]$headers$`x-ratelimit-remaining`
-      cat(ll[[i]]$status_code, lmt)
-      if (lmt < 100) {
+        lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
+      if (as.numeric(ll[[i]]$status_code) != 200) {
+        message(paste("status_code =", ll[[i]]$status_code))
         Sys.sleep(10)
-      } else {
-        # Sys.sleep(1)
+        ll[[i]] <- fetch_nrel_data(
+          lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
       }
-      mi <- nrel_read_meta(ll[[i]])
-      points(mi$Longitude, mi$Latitude, col = "red", pch = 1, cex = .5)
-    } else {
-      message(paste("status_code =", ll[[i]]$status_code))
-      points(coo$X[n], coo$Y[n], col = "blue", pch = 3, cex = .5)
+      if (as.numeric(ll[[i]]$status_code) == 200) {
+        lmt <- ll[[i]]$all_headers[[1]]$headers$`x-ratelimit-remaining`
+        cat(ll[[i]]$status_code, " | ", lmt)
+        if (lmt < 100) {
+          Sys.sleep(10)
+        } else {
+          # Sys.sleep(1)
+        }
+        mi <- nrel_read_meta(ll[[i]])
+        points(mi$Longitude, mi$Latitude, col = "blue", pch = 1, cex = .5)
+        grid_sf$fetched[n] <- T
+        grid_sf$file[n] <- basename(fname)
+        grid_sf$nrel_lon <- mi$Longitude
+        grid_sf$nrel_lat <- mi$Latitude
+      } else {
+        message(paste("status_code =", ll[[i]]$status_code))
+        points(coo$X[n], coo$Y[n], col = "red", pch = 3, cex = .5)
+      }
+      cat("\n")
     }
-    cat("\n")
+
+    # length(ll)
+    # sapply(ll, function(x) x$status_code) %>% unique()
+
+    nrel_data <- list(raw = ll, grid_sf = grid_sf, RND = RND)
+    message("saving: ", fname)
+    save(nrel_data, file = fname)
   }
-
-  length(ll)
-  sapply(ll, function(x) x$status_code) %>% unique()
-
-  assign(nm, list(raw = ll, grid_sf = grid_sf, RND = RND)); nm
-
-  if (!is.null(file_name)) {
-    save(nm, file = file_name);
-    if (sleep_after_finish) installr::os.sleep(first_turn_hibernate_off = F)
-    return(invisible(nm))
-  } else {
-    return(invisible(nm))
-  }
+  cat("done\n")
+  if (sleep_after_finish) installr::os.sleep(first_turn_hibernate_off = F)
+  return(invisible(nrel_data))
+#
+#   if (!is.null(file_name)) {
+#     save(nm, file = file_name);
+#     if (sleep_after_finish) installr::os.sleep(first_turn_hibernate_off = F)
+#     return(invisible(nm))
+#   } else {
+#     return(invisible(nm))
+#   }
 }
 

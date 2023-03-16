@@ -59,15 +59,21 @@ bbox2points <- function(b, closed = T, what = "polygon") {
 #'
 #' @examples
 guess_nrel_grid <- function(
-    gis_sf, dx = .01, dy = .01, q_atributes = "windspeed_100m",
-    collection = "wtk", q_interval = 60, q_names = "2014", steps_max = 10,
+    gis_sf,
+    dx = .01, dy = .01,
+    api_url = NULL, collection = "wtk",
+    q_atributes = "windspeed_100m",
+    q_interval = 60, q_names = "2014", steps_max = 10,
     verbose = T) {
   # browser()
   if (is.na(st_crs(gis_sf))) {
     stop("CRS is not provided. The map is expected in 'WGS 84' (4326) coordinates.\n See ?sf::st_crs and ?sf::st_transform for details.")
   }
-
-  q_api_url <- get_nrel_url(collection)
+  if (is.null(api_url)) {
+    q_api_url <- get_nrel_url(collection)
+  } else {
+    q_api_url <- api_url
+  }
 
   # centroid as the starting point
   centr <- st_centroid(bbox2points(st_bbox(st_geometry(gis_sf))))

@@ -8,8 +8,9 @@ guess_nrel_grid(
   gis_sf,
   dx = 0.01,
   dy = 0.01,
-  q_atributes = "windspeed_100m",
+  api_url = NULL,
   collection = "wtk",
+  q_atributes = "windspeed_100m",
   q_interval = 60,
   q_names = "2014",
   steps_max = 10,
@@ -23,9 +24,9 @@ guess_nrel_grid(
 
 \item{dy}{starting step along latitude}
 
-\item{q_atributes}{attributes of the query (see \code{fetch_nrel_data})}
-
 \item{collection}{name of NREL's data-collection (see \code{get_nrel_url})}
+
+\item{q_atributes}{attributes of the query (see \code{fetch_nrel_data})}
 
 \item{q_interval}{interval parameter in the query}
 
