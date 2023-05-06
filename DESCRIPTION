@@ -1,6 +1,6 @@
 Package: nrel.dev.api
 Title: R package to access data from National Renewable Energy Laboratory (NREL) developer network
-Version: 0.0.0.9000
+Version: 2023.05.05.9000
 Authors@R: 
     person(given = "Oleg", 
           family = "Lugovoy", 
@@ -9,6 +9,12 @@ Authors@R:
           comment = c(ORCID = "0000-0001-5546-9875"))
 Description: A few functions to download renewables' data from NREL via API.
 License: AGLP-3.0
+Depends: 
+    data.table,
+    fst,
+    future,
+    listenv,
+    purrr
 Imports:
     httr,
     installr

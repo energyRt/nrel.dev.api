@@ -7,7 +7,7 @@
 nrel_read_meta(x)
 }
 \arguments{
-\item{x}{}
+\item{x}{raw response object returned by \code{httr::GET} function used in}
 }
 \description{
 Extract meta-data from NREL's API response

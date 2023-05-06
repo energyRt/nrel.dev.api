@@ -10,7 +10,7 @@
 #' @export
 #'
 #' @examples
-fetch_nrel_data <- function(lon, lat, api_url = NULL, as = "raw", ...) {
+nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...) {
   # browser()
   arguments <- list(...)
   crd <- data.frame(lon, lat)
@@ -37,8 +37,8 @@ fetch_nrel_data <- function(lon, lat, api_url = NULL, as = "raw", ...) {
 }
 
 if (F) {
-  x <- fetch_nrel_data(lon = 80, lat = 15,
-                       api_url = get_nrel_url("india-wind"),
+  x <- nrel_fetch_coord(lon = 80, lat = 15,
+                       api_url = nrel_get_url("india-wind"),
                        attributes = "windspeed_40m,windspeed_80m,windspeed_100m,windspeed_120m",
                        interval = 15,
                        names = "2014", as = "parsed")
@@ -59,7 +59,7 @@ if (F) {
 #' @export
 #'
 #' @examples
-get_nrel_url <- function(x) {
+nrel_get_url <- function(x) {
   # browser()
   if (grepl("^site.count$", x, ignore.case = T))
     return("https://developer.nrel.gov/api/wind-toolkit/v2/site-count.json")
@@ -72,15 +72,15 @@ get_nrel_url <- function(x) {
 }
 
 if (F) {
-  get_nrel_url("site-count")
-  get_nrel_url("site count")
-  get_nrel_url("India wind")
+  nrel_get_url("site-count")
+  nrel_get_url("site count")
+  nrel_get_url("India wind")
 }
 
 
 #' Extract meta-data from NREL's API response
 #'
-#' @param x
+#' @param x raw response object returned by `httr::GET` function used in
 #'
 #' @return
 #' @export
@@ -142,7 +142,7 @@ nrel_read_responce <- function(x) {
 }
 
 
-#' Download data from NREL using grid of points.
+#' Download data from NREL sampling from spatial points/grid.
 #'
 #' @param grid_sf sf object with coordinates of points to download
 #' @param randomize logical, random sampling of locations
@@ -155,28 +155,31 @@ nrel_read_responce <- function(x) {
 #' @param sleep_after_finish logical, system sleep/hibernation after finishing
 #' @param api_url url of NREL's collection
 #' @param collection collection short name (not all available yet)
-#' @param ... parameters/attributes for the query (passed to `fetch_nrel_data`)
+#' @param ... parameters/attributes for the query (passed to `nrel_fetch_coord`)
 #' @param plot_process logical, should the process be visualized
+#' @param workers number of workers save downloaded data, default 2, one for fetching, second for saving.
 #'
 #' @return
 #' @export
 #'
 #' @examples
-fetch_data_from_grid <- function(grid_sf,
-                                 randomize = TRUE,
-                                 continue = TRUE,
-                                 save_by = 100,
-                                 save_dir = NULL,
-                                 file_prefix = NULL,
-                                 verbose = TRUE,
-                                 plot_process = TRUE,
-                                 limit = 1e4,
-                                 sleep_after_finish = FALSE,
-                                 api_url = NULL, collection = "wtk",
-                                 ...
-                                 ) {
+nrel_fetch_points <- function(
+    grid_sf,
+    randomize = TRUE,
+    continue = TRUE,
+    save_by = 100,
+    save_dir = NULL,
+    file_prefix = NULL,
+    verbose = TRUE,
+    plot_process = TRUE,
+    limit = 1e4,
+    workers = 2,
+    sleep_after_finish = FALSE,
+    api_url = NULL, collection = "wtk",
+    ...
+   ) {
   if (is.null(api_url)) {
-    q_api_url <- get_nrel_url(collection)
+    q_api_url <- nrel_get_url(collection)
   } else {
     q_api_url <- api_url
   }
@@ -222,7 +225,7 @@ fetch_data_from_grid <- function(grid_sf,
 
   if (verbose) {
     cat("Total points (locations) in the grid:", nrow(grid_sf), "\n")
-    cat("Points to attempt to download:", N, "\n")
+    cat("Number of points to sample from:", N, "\n")
     cat("Estimated number of files:", NN, "\n")
   }
 
@@ -230,6 +233,9 @@ fetch_data_from_grid <- function(grid_sf,
     cat("Creating directory:", save_dir, "\n")
     dir.create(save_dir)
   }
+
+  future::plan(multisession, workers = workers)
+  on.exit(future::plan(sequential))
 
   coo <- st_coordinates(grid_sf) %>% as.data.table()
   # coo
@@ -239,7 +245,7 @@ fetch_data_from_grid <- function(grid_sf,
     plot(st_geometry(grid_sf), pch = ".", col = "darkgrey")
     if (any(grid_sf$fetched)) {
       plot(st_geometry(grid_sf[grid_sf$fetched, ]), pch = 16, cex = .4,
-           col = "green3", add = T)
+           col = "orange", add = T)
     }
   }
   # coo <- coo[!grid_sf$fetched,]
@@ -247,27 +253,30 @@ fetch_data_from_grid <- function(grid_sf,
   for (nn in 0:(NN - 1)) {
     ids <- (nn * save_by + 1):min(((nn + 1) * save_by), nrow(grid_sf), length(RND))
     fname <- file.path(save_dir,
-                       paste0(file_name, "_",
+                       paste0(file_prefix, "_",
                               formatC(min(ids) + NF, width = 5, flag = "0"),
                               "_",
                               formatC(max(ids) + NF, width = 5, flag = "0"),
                               ".RData"))
     if (file.exists(fname)) {
       fname <- gsub(".RData$", paste0(" (", format(Sys.time()), ").RData"), fname)
+      fname <- gsub("[:; ]", "-", fname)
     }
-    ll <- list()
+    ll <- listenv()
     # for (i in (length(ll) + 1):N) {
     cat(" # | index | status | ratelimit-remaining\n")
     for (i in ids) {
       n <- RND[i]
       cat(i, "|" , n, "|")
       # browser()
-      ll[[i]] <- fetch_nrel_data(
+      ll[[i]] <- nrel_fetch_coord(
         lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
       if (as.numeric(ll[[i]]$status_code) != 200) {
-        message(paste("status_code =", ll[[i]]$status_code))
+        # message(paste("status_code =", ll[[i]]$status_code))
+        message(paste(ll[[i]]$status_code))
         Sys.sleep(10)
-        ll[[i]] <- fetch_nrel_data(
+        cat(i, "|" , n, "|")
+        ll[[i]] <- nrel_fetch_coord(
           lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
       }
       if (as.numeric(ll[[i]]$status_code) == 200) {
@@ -293,10 +302,10 @@ fetch_data_from_grid <- function(grid_sf,
 
     # length(ll)
     # sapply(ll, function(x) x$status_code) %>% unique()
-
+    # browser()
     nrel_data <- list(raw = ll, grid_sf = grid_sf, RND = RND)
-    message("saving: ", fname)
-    save(nrel_data, file = fname)
+    message("saving: ", fname, " (in parallel session).")
+    f <- future({save(nrel_data, file = fname)})
   }
   cat("done\n")
   if (sleep_after_finish) installr::os.sleep(first_turn_hibernate_off = F)

@@ -13,13 +13,12 @@ fetch_site_counts <- function(gis_sf) { # rename
     api_key = get_nrel_api_key()
   )
 
-  x <- httr::GET(url = get_nrel_url("site.count"), query = query)
+  x <- httr::GET(url = nrel_get_url("site.count"), query = query)
   y <- httr::content(x, "parsed", encoding = "UTF-8")
   y$outputs$total <- sum(unlist(y$outputs), na.rm = T)
   # y$total <- sum(unlist(y$outputs), na.rm = T)
   return(c(raw = list(x), y))
 }
-
 
 bbox2points <- function(b, closed = T, what = "polygon") {
   # b - bbox
@@ -47,8 +46,8 @@ bbox2points <- function(b, closed = T, what = "polygon") {
 #' @param gis_sf sf object (map) of the region to estimate a number of data-points in NREL's collection, and their coordinates (grid).
 #' @param dx starting step along longitude
 #' @param dy starting step along latitude
-#' @param q_atributes attributes of the query (see `fetch_nrel_data`)
-#' @param collection name of NREL's data-collection (see `get_nrel_url`)
+#' @param q_atributes attributes of the query (see `nrel_fetch_coord`)
+#' @param collection name of NREL's data-collection (see `nrel_get_url`)
 #' @param q_interval interval parameter in the query
 #' @param q_names names parameter in the query
 #' @param steps_max maximum steps in evaluation of the grid along each axis, 10 by default
@@ -58,7 +57,7 @@ bbox2points <- function(b, closed = T, what = "polygon") {
 #' @export
 #'
 #' @examples
-guess_nrel_grid <- function(
+nrel_guess_grid <- function(
     gis_sf,
     dx = .01, dy = .01,
     api_url = NULL, collection = "wtk",
@@ -70,7 +69,7 @@ guess_nrel_grid <- function(
     stop("CRS is not provided. The map is expected in 'WGS 84' (4326) coordinates.\n See ?sf::st_crs and ?sf::st_transform for details.")
   }
   if (is.null(api_url)) {
-    q_api_url <- get_nrel_url(collection)
+    q_api_url <- nrel_get_url(collection)
   } else {
     q_api_url <- api_url
   }
@@ -84,10 +83,12 @@ guess_nrel_grid <- function(
   mm <- list() # metadata
   dd <- list() # data from responses
   if (verbose) {
-    cat("Requesting data from NREL for coordinates: ",
+    cat("Fetching point #", 1, ", coordinates:",
+        # "Coordinates: ",  move$x[i],", ", move$y[i], "\n", sep = "")
+    # cat("Requesting data from NREL for coordinates: ",
         centr_coo[1, "X"], ", ", centr_coo[1, "Y"], sep = "")
   }
-  rr[[1]] <- fetch_nrel_data(lon = centr_coo[1, "X"], lat = centr_coo[1, "Y"],
+  rr[[1]] <- nrel_fetch_coord(lon = centr_coo[1, "X"], lat = centr_coo[1, "Y"],
                              api_url = q_api_url, attributes = q_atributes,
                              interval = q_interval, names = q_names, as = "raw")
   if (verbose) {
@@ -127,9 +128,9 @@ guess_nrel_grid <- function(
       move$y[i] <- move$y[i - 1] + dy * move$dir_y[i] + dy_drift * move$dir_x[i]
       if (verbose) {
         cat("Fetching point #", i, ", ",
-            "Coordinates: ",  move$x[i],", ", move$y[i], "\n", sep = "")
+            "coordinates: ",  move$x[i],", ", move$y[i], "\n", sep = "")
       }
-      rr[[i]] <- fetch_nrel_data(
+      rr[[i]] <- nrel_fetch_coord(
         lon = move$x[i], lat = move$y[i], api_url = q_api_url,
         attributes = q_atributes, interval = q_interval, names = q_names, as = "raw")
       if (rr[[i]]$status_code != 200) {

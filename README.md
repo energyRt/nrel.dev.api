@@ -47,11 +47,11 @@ x <- get_nrel_api_email()
 x
 get_nrel_api_key(invisible = FALSE)
 # get url address by the dataset name
-get_nrel_url("india-wind") 
+nrel_get_url("india-wind") 
 # fetch/download the data
-x <- fetch_nrel_data(
+x <- nrel_fetch_coord(
   lon = 75.36621, lat = 24.72687,
-  api_url = get_nrel_url("india-wind"),
+  api_url = nrel_get_url("india-wind"),
   attributes = "windspeed_40m,windspeed_80m,windspeed_100m,windspeed_120m",
   interval = 15,
   names = "2014")
