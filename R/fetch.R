@@ -5,12 +5,14 @@
 #' @param api_url character string with the url-address to a particular dataset
 #' @param as httr parameter
 #' @param ... attributes for the API query
+#' @param timeout numeric, seconds, time to pass in `httr::timeout`, 20 by default
 #'
 #' @return
 #' @export
 #'
 #' @examples
-nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...) {
+nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...,
+                             timeout = 20) {
   # browser()
   arguments <- list(...)
   crd <- data.frame(lon, lat)
@@ -28,8 +30,8 @@ nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...) {
              email = get_nrel_api_email(),
              api_key = get_nrel_api_key()
              )
-  # browser()
-  x <- httr::GET(url = api_url, query = query)
+  browser()
+  x <- httr::GET(url = api_url, query = query, httr::timeout(timeout))
 
   if (as == "raw") return(x)
   x <- httr::content(x, as, encoding = "UTF-8")
@@ -67,14 +69,18 @@ nrel_get_url <- function(x) {
     return("https://developer.nrel.gov/api/wind-toolkit/v2/wind/india-wind-download.csv")
   if (grepl("^wtk$", x, ignore.case = T))
     return("https://developer.nrel.gov/api/wind-toolkit/v2/wind/wtk-download.csv")
-  # if (grepl("^india.wind$", x, ignore.case = T))
-  #   return("https://developer.nrel.gov/api/wind-toolkit/v2/wind/wtk-download.csv")
+  if (grepl("^mexico.(wind|wtk)(|.download)$", x, ignore.case = T))
+    return("https://developer.nrel.gov/api/wind-toolkit/v2/wind/mexico-wtk-download.csv")
+  # if (grepl("^wtk$", x, ignore.case = T))
 }
 
 if (F) {
   nrel_get_url("site-count")
   nrel_get_url("site count")
   nrel_get_url("India wind")
+  nrel_get_url("mexico.wtk")
+  nrel_get_url("mexico wind")
+
 }
 
 
@@ -175,7 +181,8 @@ nrel_fetch_points <- function(
     limit = 1e4,
     workers = 2,
     sleep_after_finish = FALSE,
-    api_url = NULL, collection = "wtk",
+    api_url = NULL,
+    collection = "wtk",
     ...
    ) {
   if (is.null(api_url)) {
