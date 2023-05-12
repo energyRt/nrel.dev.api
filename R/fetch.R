@@ -30,7 +30,7 @@ nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...,
              email = get_nrel_api_email(),
              api_key = get_nrel_api_key()
              )
-  browser()
+  # browser()
   x <- httr::GET(url = api_url, query = query, httr::timeout(timeout))
 
   if (as == "raw") return(x)

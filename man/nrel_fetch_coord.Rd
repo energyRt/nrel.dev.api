@@ -4,7 +4,7 @@
 \alias{nrel_fetch_coord}
 \title{Fetch (request and download) data from NREL}
 \usage{
-nrel_fetch_coord(lon, lat, api_url = NULL, as = "raw", ...)
+nrel_fetch_coord(lon, lat, api_url = NULL, as = "raw", ..., timeout = 20)
 }
 \arguments{
 \item{lon}{vector with longitude coordinate(s)}
@@ -16,6 +16,8 @@ nrel_fetch_coord(lon, lat, api_url = NULL, as = "raw", ...)
 \item{as}{httr parameter}
 
 \item{...}{attributes for the API query}
+
+\item{timeout}{numeric, seconds, time to pass in \code{httr::timeout}, 20 by default}
 }
 \description{
 Fetch (request and download) data from NREL
