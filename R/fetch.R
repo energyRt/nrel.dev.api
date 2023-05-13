@@ -12,7 +12,7 @@
 #'
 #' @examples
 nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...,
-                             timeout = 20) {
+                             timeout = 100) {
   # browser()
   arguments <- list(...)
   crd <- data.frame(lon, lat)
@@ -31,7 +31,7 @@ nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...,
              api_key = get_nrel_api_key()
              )
   # browser()
-  x <- httr::GET(url = api_url, query = query, httr::timeout(timeout))
+  x <- httr::GET(url = api_url, query = query, httr::timeout(100))
 
   if (as == "raw") return(x)
   x <- httr::content(x, as, encoding = "UTF-8")
