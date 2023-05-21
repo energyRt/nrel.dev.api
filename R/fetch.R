@@ -31,8 +31,9 @@ nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...,
              api_key = get_nrel_api_key()
              )
   # browser()
-  x <- httr::GET(url = api_url, query = query, httr::timeout(100))
-
+  x <- httr::GET(url = api_url, query = query,
+                 config = httr::config(connecttimeout = timeout)
+                 )
   if (as == "raw") return(x)
   x <- httr::content(x, as, encoding = "UTF-8")
   return(x)
@@ -276,19 +277,27 @@ nrel_fetch_points <- function(
       n <- RND[i]
       cat(i, "|" , n, "|")
       # browser()
-      ll[[i]] <- nrel_fetch_coord(
-        lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
+      tic <- Sys.time()
+      ll[[i]] <- try({
+        nrel_fetch_coord(
+          lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
+      })
       if (as.numeric(ll[[i]]$status_code) != 200) {
         # message(paste("status_code =", ll[[i]]$status_code))
         message(paste(ll[[i]]$status_code))
         Sys.sleep(10)
         cat(i, "|" , n, "|")
-        ll[[i]] <- nrel_fetch_coord(
-          lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
+
+        ll[[i]] <- try({
+          nrel_fetch_coord(
+            lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url,
+            ..., as = "raw")
+        })
       }
       if (as.numeric(ll[[i]]$status_code) == 200) {
+        toc <- Sys.time()
         lmt <- ll[[i]]$all_headers[[1]]$headers$`x-ratelimit-remaining`
-        cat(ll[[i]]$status_code, " | ", lmt)
+        cat(ll[[i]]$status_code, " | ", lmt, " | ", format(toc - tic))
         if (lmt < 100) {
           Sys.sleep(10)
         } else {
@@ -301,7 +310,8 @@ nrel_fetch_points <- function(
         grid_sf$nrel_lon <- mi$Longitude
         grid_sf$nrel_lat <- mi$Latitude
       } else {
-        message(paste("status_code =", ll[[i]]$status_code))
+        # message(paste("status_code =", ll[[i]]$status_code))
+        message(paste(ll[[i]]$status_code, " - failed"))
         points(coo$X[n], coo$Y[n], col = "red", pch = 3, cex = .5)
       }
       cat("\n")

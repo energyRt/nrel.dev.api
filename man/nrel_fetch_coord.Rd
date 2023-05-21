@@ -4,7 +4,7 @@
 \alias{nrel_fetch_coord}
 \title{Fetch (request and download) data from NREL}
 \usage{
-nrel_fetch_coord(lon, lat, api_url = NULL, as = "raw", ..., timeout = 20)
+nrel_fetch_coord(lon, lat, api_url = NULL, as = "raw", ..., timeout = 100)
 }
 \arguments{
 \item{lon}{vector with longitude coordinate(s)}
