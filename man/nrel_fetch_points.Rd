@@ -5,9 +5,9 @@
 \title{Download data from NREL sampling from spatial points/grid.}
 \usage{
 nrel_fetch_points(
-  grid_sf,
+  grid_sf = NULL,
   randomize = TRUE,
-  continue = TRUE,
+  continue = is.null(grid_sf),
   save_by = 100,
   save_dir = NULL,
   file_prefix = NULL,

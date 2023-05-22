@@ -171,9 +171,9 @@ nrel_read_responce <- function(x) {
 #'
 #' @examples
 nrel_fetch_points <- function(
-    grid_sf,
+    grid_sf = NULL,
     randomize = TRUE,
-    continue = TRUE,
+    continue = is.null(grid_sf),
     save_by = 100,
     save_dir = NULL,
     file_prefix = NULL,
@@ -186,6 +186,23 @@ nrel_fetch_points <- function(
     collection = "wtk",
     ...
    ) {
+  # browser()
+  if (continue) {
+     ff <- list.files(save_dir, paste0("^", file_prefix, ".+RData"),
+                     ignore.case = TRUE, full.names = T)
+    if (length(ff) == 0) {
+      warning("No `", file_prefix,"*_*.RData` files have been found.")
+    } else {
+      f <- sort(ff, decreasing = T)[1]
+      cat("Found", length(ff), "files.\nStarting from:\n", f, "\n")
+      (load(f))
+
+      if (!is.null(nrel_data$RND)) RND <- nrel_data$RND
+      if (!is.null(grid_sf)) warning("Replacing given `grid_sf` object with saved in`",
+                                     basename(f), "` file.")
+      grid_sf <- nrel_data$grid_sf
+    }
+  }
   if (is.null(api_url)) {
     q_api_url <- nrel_get_url(collection)
   } else {
@@ -217,9 +234,11 @@ nrel_fetch_points <- function(
   # if (!exists("RND")) RND <- sample(1:N, N)
   # unique(RND) %>% length(); N
 
-  RND <- grid_sf$index[!grid_sf$fetched]
-  if (randomize) RND <- sample(RND, length(RND), replace = FALSE)
-  RND <- RND[1:min(length(RND), limit)]
+  if (!exists("RND", 1)) {
+    RND <- grid_sf$index[!grid_sf$fetched]
+    if (randomize) RND <- sample(RND, length(RND), replace = FALSE)
+    RND <- RND[1:min(length(RND), limit)]
+  }
 
   NN <- ceiling(length(RND) / save_by)
   # if (is.null(cells)) {
@@ -252,8 +271,10 @@ nrel_fetch_points <- function(
     par(mai = rep(0, 4))
     plot(st_geometry(grid_sf), pch = ".", col = "darkgrey")
     if (any(grid_sf$fetched)) {
-      plot(st_geometry(grid_sf[grid_sf$fetched, ]), pch = 16, cex = .4,
-           col = "orange", add = T)
+      ii_p <- grid_sf$fetched & !grepl("failed$", grid_sf$file)
+      ii_n <- grid_sf$fetched & grepl("failed$", grid_sf$file)
+      plot(st_geometry(grid_sf[ii_p, ]), pch = 16, cex = .4, col = "orange", add = T)
+      plot(st_geometry(grid_sf[ii_n, ]), pch = 16, cex = .3, col = "red", add = T)
     }
   }
   # coo <- coo[!grid_sf$fetched,]
@@ -272,7 +293,7 @@ nrel_fetch_points <- function(
     }
     ll <- listenv()
     # for (i in (length(ll) + 1):N) {
-    cat(" # | index | status | ratelimit-remaining\n")
+    cat(" # | index | status | ratelimit-remaining | timing\n")
     for (i in ids) {
       n <- RND[i]
       cat(i, "|" , n, "|")
@@ -294,6 +315,7 @@ nrel_fetch_points <- function(
             ..., as = "raw")
         })
       }
+      grid_sf$fetched[n] <- T
       if (as.numeric(ll[[i]]$status_code) == 200) {
         toc <- Sys.time()
         lmt <- ll[[i]]$all_headers[[1]]$headers$`x-ratelimit-remaining`
@@ -305,13 +327,14 @@ nrel_fetch_points <- function(
         }
         mi <- nrel_read_meta(ll[[i]])
         points(mi$Longitude, mi$Latitude, col = "blue", pch = 1, cex = .5)
-        grid_sf$fetched[n] <- T
-        grid_sf$file[n] <- basename(fname)
         grid_sf$nrel_lon <- mi$Longitude
         grid_sf$nrel_lat <- mi$Latitude
+        grid_sf$file[n] <- basename(fname)
       } else {
         # message(paste("status_code =", ll[[i]]$status_code))
-        message(paste(ll[[i]]$status_code, " - failed"))
+        msg_failed <- paste(ll[[i]]$status_code, " - failed")
+        message(msg_failed)
+        grid_sf$file[n] <- msg_failed; rm(msg_failed)
         points(coo$X[n], coo$Y[n], col = "red", pch = 3, cex = .5)
       }
       cat("\n")

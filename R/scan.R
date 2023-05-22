@@ -184,22 +184,26 @@ nrel_guess_grid <- function(
   stopifnot(sc$outputs[[collection]] == 4) # TRUE
 
   # rotate the conner-points
-  # https://cran.r-project.org/web/packages/sf/vignettes/sf3.html
-  rot <- function(a) matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2) # rot(pi/4)
+  # # https://cran.r-project.org/web/packages/sf/vignettes/sf3.html
+  # rot <- function(a) matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2) # rot(pi/4)
   gpts <- st_geometry(pts) # grid "conner" points
 
   ang <- diff(h$Latitude[1:2]) / diff(h$Longitude[1:2]) # angle
   if (verbose) cat("Estimated cell size: dx = ", dx, ", dy = ", dy,
                    ", angle = ", tan(ang), "\n", sep = "")
   # ang; tan(ang)
-  pts2 <- (gpts - gpts[1]) * rot(tan(ang)) + gpts[1] # rotated points
+  pts2 <- rotate_geom(geom = gpts, ang = ang, centr = gpts[1])
+  # pts2 <- (gpts - gpts[1]) * rot(tan(ang)) + gpts[1] # rotated points
   dxr <- diff(st_coordinates(pts2)[1:2,"X"]) # dx of roteted grid
   dyr <- diff(st_coordinates(pts2)[c(1,4),"Y"]) # dy of rotated grid
   drift <- diff(st_coordinates(pts2)[c(1,4),"X"]) # drift of Y in rotated grid
 
   # rotate the given gis_sf around the its centroid
   # if (verbose) cat("Rotating geometry", "\n", sep = "")
-  gis_rot_geom <- (st_geometry(gis_sf) - centr) * rot(tan(ang)) + centr
+  # browser()
+  gis_rot_geom <- rotate_geom(geom = st_geometry(gis_sf), #[,1:2]
+                               ang = ang, centr = centr)
+  # gis_rot_geom <- (st_geometry(gis_sf) - centr) * rot(tan(ang)) + centr
   st_crs(gpts) <- st_crs(gis_sf)
   st_crs(pts2) <- st_crs(gis_sf)
   st_crs(gis_rot_geom) <- st_crs(gis_sf)
@@ -259,7 +263,7 @@ nrel_guess_grid <- function(
   # head(coo)
   grid0_sf <- st_as_sf(as.data.frame(coo), coords = c("X", "Y"), crs = st_crs(gis_sf))
   coo0_geom <- st_geometry(grid0_sf)
-
+  # browser()
   if (F) { # debug check
     ggplot() +
       geom_sf(data = gis_sf, fill = "wheat") +
@@ -271,12 +275,24 @@ nrel_guess_grid <- function(
 
   # rotate grid back around a point closest to its own centroid
   if (verbose) cat("rotating... ", "", sep = "")
-  coo_geom <- (coo0_geom - centr) * rot(-tan(ang)) + centr # rotated points
+  # coo0 <- st_coordinates(coo0_geom)
+  # centr_coo <- st_coordinates(centr)
+  # coo0[,1] <- coo0[,1] - centr_coo[1,1]
+  # coo0[,2] <- coo0[,2] - centr_coo[1,2]
+  # coo0 <- coo0 %*% rot(-tan(ang))
+  # coo0[,1] <- coo0[,1] + centr_coo[1,1]
+  # coo0[,2] <- coo0[,2] + centr_coo[1,2]
+  # colnames(coo0) <- c("lon", "lat")
+  # coo0 <- as.data.table(coo0)
+  # coo_geom <- st_as_sf(coo0, coords = c("lon", "lat"))
+  coo_geom <- rotate_geom(geom = coo0_geom, ang = ang, centr = centr)
+  # coo_geom <- (coo0_geom - centr) * rot(-tan(ang)) + centr # rotated points
   # bx <- bbox2points(st_bbox(coo_geom))
   # check_sites <- fetch_site_counts(bx)
   # check_sites # 50000 is the upper value
   grid_sf <- st_as_sf(coo_geom, crs = st_crs(gis_sf))
-  gis_rot_geom_back <- (gis_rot_geom - centr) * rot(-tan(ang)) + centr
+  # gis_rot_geom_back <- (gis_rot_geom - centr) * rot(-tan(ang)) + centr
+  gis_rot_geom_back <- rotate_geom(geom = coo0_geom, ang = -ang, centr = centr)
   st_crs(gis_rot_geom_back) <- st_crs(gis_sf)
 
   if (F) { # debug/check
@@ -327,4 +343,29 @@ nrel_guess_grid <- function(
       data = dd
     )
   ))
+}
+
+
+# https://cran.r-project.org/web/packages/sf/vignettes/sf3.html
+rot <- function(a) matrix(c(cos(a), sin(a), -sin(a), cos(a)), 2, 2) # rot(pi/4)
+
+rotate_geom <- function(geom, ang = 0, centr = NULL) {
+  # browser()
+  coo <- st_coordinates(geom)[,1:2]
+  if (is.null(centr)) {
+    centr_coo <- matrix(0, nrow = 1, ncol = 2)
+  } else {
+    centr_coo <- st_coordinates(centr)
+  }
+  coo[,1] <- coo[,1] - centr_coo[1,1]
+  coo[,2] <- coo[,2] - centr_coo[1,2]
+  coo <- coo %*% rot(-tan(ang))
+  coo[,1] <- coo[,1] + centr_coo[1,1]
+  coo[,2] <- coo[,2] + centr_coo[1,2]
+  colnames(coo) <- c("lon", "lat")
+  coo <- as.data.table(coo)
+  coo_geom <- st_as_sf(coo, coords = c("lon", "lat"))
+  # if ()
+  return(st_geometry(coo_geom))
+  # coo_geom <- (coo0_geom - centr) * rot(-tan(ang)) + centr # rotated points
 }
