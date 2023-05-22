@@ -248,7 +248,7 @@ nrel_fetch_points <- function(
   # }
   # N <- nmax <- length(RND)
 
-  # if (!exists("ll"))
+  # if (!exists(".nrel$ll"))
 
   if (verbose) {
     cat("Total points (locations) in the grid:", nrow(grid_sf), "\n")
@@ -262,7 +262,18 @@ nrel_fetch_points <- function(
   }
 
   future::plan(multisession, workers = workers)
-  on.exit(future::plan(sequential))
+  on.exit({
+    future::plan(sequential)
+    try({
+      # fname <- gsub(".RData$",
+      #               paste0("(interrupted-",
+      #                      format(Sys.time()), ").RData"), fname)
+      # fname <- gsub("[:; ]", "-", fname)
+      fname <- resolve_file_name(fname, "interrupted-")
+      message("Saving ", fname)
+      save(nrel_data, file = fname)
+    })
+  })
 
   coo <- st_coordinates(grid_sf) %>% as.data.table()
   # coo
@@ -288,51 +299,53 @@ nrel_fetch_points <- function(
                               formatC(max(ids) + NF, width = 5, flag = "0"),
                               ".RData"))
     if (file.exists(fname)) {
-      fname <- gsub(".RData$", paste0(" (", format(Sys.time()), ").RData"), fname)
-      fname <- gsub("[:; ]", "-", fname)
+      # fname <- gsub(".RData$", paste0(" (", format(Sys.time()), ").RData"), fname)
+      # fname <- gsub("[:; ]", "-", fname)
+      fname <- resolve_file_name(fname)
     }
-    ll <- listenv()
-    # for (i in (length(ll) + 1):N) {
+    # ll <- listenv()
+    .nrel$ll <- list()
+    # for (i in (length(.nrel$ll) + 1):N) {
     cat(" # | index | status | ratelimit-remaining | timing\n")
     for (i in ids) {
       n <- RND[i]
       cat(i, "|" , n, "|")
       # browser()
       tic <- Sys.time()
-      ll[[i]] <- try({
+      .nrel$ll[[i]] <- try({
         nrel_fetch_coord(
           lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url, ..., as = "raw")
       })
-      if (as.numeric(ll[[i]]$status_code) != 200) {
-        # message(paste("status_code =", ll[[i]]$status_code))
-        message(paste(ll[[i]]$status_code))
+      if (as.numeric(.nrel$ll[[i]]$status_code) != 200) {
+        # message(paste("status_code =", .nrel$ll[[i]]$status_code))
+        message(paste(.nrel$ll[[i]]$status_code))
         Sys.sleep(10)
         cat(i, "|" , n, "|")
 
-        ll[[i]] <- try({
+        .nrel$ll[[i]] <- try({
           nrel_fetch_coord(
             lon = coo$X[n], lat = coo$Y[n], api_url = q_api_url,
             ..., as = "raw")
         })
       }
       grid_sf$fetched[n] <- T
-      if (as.numeric(ll[[i]]$status_code) == 200) {
+      if (as.numeric(.nrel$ll[[i]]$status_code) == 200) {
         toc <- Sys.time()
-        lmt <- ll[[i]]$all_headers[[1]]$headers$`x-ratelimit-remaining`
-        cat(ll[[i]]$status_code, " | ", lmt, " | ", format(toc - tic))
+        lmt <- .nrel$ll[[i]]$all_headers[[1]]$headers$`x-ratelimit-remaining`
+        cat(.nrel$ll[[i]]$status_code, " | ", lmt, " | ", format(toc - tic))
         if (lmt < 100) {
           Sys.sleep(10)
         } else {
           # Sys.sleep(1)
         }
-        mi <- nrel_read_meta(ll[[i]])
+        mi <- nrel_read_meta(.nrel$ll[[i]])
         points(mi$Longitude, mi$Latitude, col = "blue", pch = 1, cex = .5)
         grid_sf$nrel_lon <- mi$Longitude
         grid_sf$nrel_lat <- mi$Latitude
         grid_sf$file[n] <- basename(fname)
       } else {
-        # message(paste("status_code =", ll[[i]]$status_code))
-        msg_failed <- paste(ll[[i]]$status_code, " - failed")
+        # message(paste("status_code =", .nrel$ll[[i]]$status_code))
+        msg_failed <- paste(.nrel$ll[[i]]$status_code, " - failed")
         message(msg_failed)
         grid_sf$file[n] <- msg_failed; rm(msg_failed)
         points(coo$X[n], coo$Y[n], col = "red", pch = 3, cex = .5)
@@ -340,11 +353,12 @@ nrel_fetch_points <- function(
       cat("\n")
     }
 
-    # length(ll)
-    # sapply(ll, function(x) x$status_code) %>% unique()
+    # length(.nrel$ll)
+    # sapply(.nrel$ll, function(x) x$status_code) %>% unique()
     # browser()
-    nrel_data <- list(raw = ll, grid_sf = grid_sf, RND = RND)
+    nrel_data <- list(raw = .nrel$ll, grid_sf = grid_sf, RND = RND)
     message("saving: ", fname, " (in parallel session).")
+    # browser()
     f <- future({save(nrel_data, file = fname)})
   }
   cat("done\n")
@@ -358,5 +372,22 @@ nrel_fetch_points <- function(
 #   } else {
 #     return(invisible(nm))
 #   }
+}
+
+resolve_file_name <- function(fname, addin = NULL) {
+  # browser()
+  bname <- basename(fname)
+  new_bname <- gsub(".RData$",
+                    paste0("(", addin,
+                           format(Sys.time()), ").RData"), bname)
+  new_bname <- gsub("[:; ]", "-", new_bname)
+  fname <- gsub(bname, new_bname, fname)
+  fname
+}
+
+if (F) {
+  fname <- "D:/Dropbox/Xeon_link/NREL/USA/USA_FRCC_wind_ge30_00251_00275.RData"
+  resolve_file_name(fname)
+  resolve_file_name(fname, "interrupted-")
 }
 

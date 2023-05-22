@@ -1,6 +1,6 @@
 Package: nrel.dev.api
 Title: R package to access data from National Renewable Energy Laboratory (NREL) developer network
-Version: 2023.05.21.9000
+Version: 2023.05.22.9000
 Authors@R: 
     person(given = "Oleg", 
           family = "Lugovoy", 
@@ -13,7 +13,6 @@ Depends:
     data.table,
     fst,
     future,
-    listenv,
     purrr,
     R (>= 2.10)
 Imports:

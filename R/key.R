@@ -6,6 +6,7 @@
             Use '?set_nrel_api_key' for help")
   }
   options(nrel.dev.api.verbose = TRUE)
+  .nrel <<- new.env(parent = .GlobalEnv)
 }
 
 #' Set API key and save it in a hidden file. The key will be retrieved with loading the package.

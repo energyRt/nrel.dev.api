@@ -83,7 +83,7 @@ nrel_guess_grid <- function(
   mm <- list() # metadata
   dd <- list() # data from responses
   if (verbose) {
-    cat("Fetching point #", 1, ", coordinates:",
+    cat("Fetching point #", 1, ", coordinates: ",
         # "Coordinates: ",  move$x[i],", ", move$y[i], "\n", sep = "")
     # cat("Requesting data from NREL for coordinates: ",
         centr_coo[1, "X"], ", ", centr_coo[1, "Y"], sep = "")
