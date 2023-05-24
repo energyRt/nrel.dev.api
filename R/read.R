@@ -131,7 +131,7 @@ nrel_read_save_data <- function(
               mm[[j]] <- as.integer(mm[[j]] * 10^scale_round)
             }
           }
-          fname <- file.path(save_dir, paste0("NREL_SiteID", SiteID))
+          fname <- file.path(save_dir, paste0("SiteID_", SiteID))
           if (overwrite) {
             check_if_exists <- list.files(save_dir, pattern = paste0(fname, ".+fst$"))
             if (length(check_if_exists) > 0) {
