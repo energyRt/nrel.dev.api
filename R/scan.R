@@ -97,10 +97,11 @@ nrel_guess_grid <- function(
   if (rr[[1]]$status_code != 200) {
     stop("Unsuccessfull request. Check parameters of the the query.")
   }
-
+  # browser()
   y <- nrel_read_responce(rr[[1]])
   mm[[1]] <- y$meta
   dd[[1]] <- y$data
+  # browser()
   cent0 <- st_as_sf(y$meta, coords = c("Longitude", "Latitude"))
   cent0_coord <- st_coordinates(cent0)
   cc0 <- as.list(as.data.frame(cent0_coord)) # shorter version
