@@ -100,30 +100,64 @@ if (F) {
 nrel_read_meta <- function(x) {
   # x - response object
   stopifnot(x$status_code == 200)
+  # browser()
   y <- httr::content(x, "text", encoding = "UTF-8")
-  z <- data.table::fread(y, nrows = 1, skip = 0, header = FALSE)
-  # Check arrangement of the meta-data
-  ## horizontal?
+  z1 <- data.table::fread(y, nrows = 1, skip = 0, header = FALSE)
+  z2 <- data.table::fread(y, nrows = 1, skip = 1, header = FALSE)
+  z3 <- data.table::fread(y, nrows = 1, skip = 2, header = FALSE)
   headers <- c("SiteID", "Site.Timezone", "Data", "Timezone",
                "Longitude", "Latitude", "Country")
-  ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
-  if (sum(ii) >= 5) { # horizontal table
-    meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
-    nskip <- 2
-  } else { # most likely two-row table with mixed columns "name|data|..|name|data|
-    if (!any(grepl("itude", unlist(z[1,])))) {
-      # try to read the second rowLatitude
-      z2 <- data.table::fread(y, nrows = 1, skip = 1)
-      z3 <- data.table::fread(y, nrows = 1, skip = 2)
-      stopifnot(any(grepl("itude", unlist(z2[1,]))))
-      stopifnot(any(grepl("itude", unlist(z3[1,]))))
-      z <- cbind(z, z2, z3)
+  if (ncol(z2) == ncol(z1)) { # two-row vertical table
+    if (nrow(z3) == ncol(z1)) {
+      z <- cbind(z1, z2, z3)
+      ii <- rep(c(T, F), length.out = ncol(z))
+      meta <- as.numeric(as.character(z)[!ii])
+      names(meta) <- as.character(z)[ii]
       nskip <- 3
+    } else {
+      # check for headers
+      ## horizontal?
+      ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
+      if (sum(ii) >= 5 & ncol(z) <= 7) { # horizontal table
+        meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
+      } else {
+        ii <- rep(c(T, F), length.out = ncol(z))
+        meta <- as.numeric(as.character(z)[!ii])
+        names(meta) <- as.character(z)[ii]
+
+      }
     }
+  } else { #one row horizontal table
+    z <- z1
     ii <- rep(c(T, F), length.out = ncol(z))
     meta <- as.numeric(as.character(z)[!ii])
     names(meta) <- as.character(z)[ii]
+    nskip <- 1
   }
+  # Check arrangement of the meta-data
+  # ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
+  # if (sum(ii) >= 5 & ncol(z) <= 7) { # horizontal table
+    # meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
+    # nskip <- 2
+  # } else if (ncol(z) > 7) {
+  #   # most likely one or two-rows table with mixed columns "name|data|name|data..etc.
+  #   z2 <- data.table::fread(y, nrows = 1, skip = 1)
+  #   z <- cbind(z, z2, z3)
+  #   nskip <- 1
+  #   stopifnot(any(grepl("itude", unlist(z2[1,]))))
+  #   if (!any(grepl("itude", unlist(z[1,])))) {
+  #     # try to read the second rowLatitude
+  #     # z2 <- data.table::fread(y, nrows = 1, skip = 1)
+  #     z3 <- data.table::fread(y, nrows = 1, skip = 2)
+  #     # stopifnot(any(grepl("itude", unlist(z2[1,]))))
+  #     stopifnot(any(grepl("itude", unlist(z3[1,]))))
+  #     z <- cbind(z,z3)
+  #     nskip <- 2
+  #   }
+    # ii <- rep(c(T, F), length.out = ncol(z))
+    # meta <- as.numeric(as.character(z)[!ii])
+    # names(meta) <- as.character(z)[ii]
+  # }
   # read data
   meta <- as.list(meta) %>% data.table::as.data.table()
   return(meta)
@@ -360,6 +394,7 @@ nrel_fetch_points <- function(
         } else {
           # Sys.sleep(1)
         }
+        # browser()
         mi <- nrel_read_meta(.nrel$raw[[j]])
         points(mi$Longitude, mi$Latitude, col = "blue", pch = 1, cex = .5)
         .nrel$grid_sf$nrel_lon <- mi$Longitude
