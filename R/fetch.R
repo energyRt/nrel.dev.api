@@ -34,6 +34,7 @@ nrel_fetch_coord <- function(lon, lat, api_url = NULL, as = "raw", ...,
   x <- httr::GET(url = api_url, query = query,
                  config = httr::config(connecttimeout = timeout)
                  )
+  # browser()
   if (as == "raw") return(x)
   x <- httr::content(x, as, encoding = "UTF-8")
   return(x)
@@ -100,40 +101,42 @@ if (F) {
 nrel_read_meta <- function(x) {
   # x - response object
   stopifnot(x$status_code == 200)
-  # browser()
   y <- httr::content(x, "text", encoding = "UTF-8")
-  z1 <- data.table::fread(y, nrows = 1, skip = 0, header = FALSE)
-  z2 <- data.table::fread(y, nrows = 1, skip = 1, header = FALSE)
-  z3 <- data.table::fread(y, nrows = 1, skip = 2, header = FALSE)
-  headers <- c("SiteID", "Site.Timezone", "Data", "Timezone",
-               "Longitude", "Latitude", "Country")
-  if (ncol(z2) == ncol(z1)) { # two-row vertical table
-    if (nrow(z3) == ncol(z1)) {
-      z <- cbind(z1, z2, z3)
-      ii <- rep(c(T, F), length.out = ncol(z))
-      meta <- as.numeric(as.character(z)[!ii])
-      names(meta) <- as.character(z)[ii]
-      nskip <- 3
-    } else {
-      # check for headers
-      ## horizontal?
-      ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
-      if (sum(ii) >= 5 & ncol(z) <= 7) { # horizontal table
-        meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
-      } else {
-        ii <- rep(c(T, F), length.out = ncol(z))
-        meta <- as.numeric(as.character(z)[!ii])
-        names(meta) <- as.character(z)[ii]
-
-      }
-    }
-  } else { #one row horizontal table
-    z <- z1
-    ii <- rep(c(T, F), length.out = ncol(z))
-    meta <- as.numeric(as.character(z)[!ii])
-    names(meta) <- as.character(z)[ii]
-    nskip <- 1
-  }
+  # browser()
+  m <- guess_header(y)
+  meta <- m$meta
+  # z1 <- data.table::fread(y, nrows = 1, skip = 0, header = FALSE)
+  # z2 <- data.table::fread(y, nrows = 1, skip = 1, header = FALSE)
+  # z3 <- data.table::fread(y, nrows = 1, skip = 2, header = FALSE)
+  # headers <- c("SiteID", "Site.Timezone", "Data", "Timezone",
+  #              "Longitude", "Latitude", "Country")
+  # if (ncol(z2) == ncol(z1)) { # two-row vertical table
+  #   if (nrow(z3) == ncol(z1)) {
+  #     z <- cbind(z1, z2, z3)
+  #     ii <- rep(c(T, F), length.out = ncol(z))
+  #     meta <- as.numeric(as.character(z)[!ii])
+  #     names(meta) <- as.character(z)[ii]
+  #     nskip <- 3
+  #   } else {
+  #     # check for headers
+  #     ## horizontal?
+  #     ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
+  #     if (sum(ii) >= 5 & ncol(z) <= 7) { # horizontal table
+  #       meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
+  #     } else {
+  #       ii <- rep(c(T, F), length.out = ncol(z))
+  #       meta <- as.numeric(as.character(z)[!ii])
+  #       names(meta) <- as.character(z)[ii]
+  #
+  #     }
+  #   }
+  # } else { #one row horizontal table
+  #   z <- z1
+  #   ii <- rep(c(T, F), length.out = ncol(z))
+  #   meta <- as.numeric(as.character(z)[!ii])
+  #   names(meta) <- as.character(z)[ii]
+  #   nskip <- 1
+  # }
   # Check arrangement of the meta-data
   # ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
   # if (sum(ii) >= 5 & ncol(z) <= 7) { # horizontal table
@@ -175,34 +178,72 @@ nrel_read_responce <- function(x) {
   # x - response object
   stopifnot(x$status_code == 200)
   # read meta data
+  browser()
   y <- httr::content(x, "text", encoding = "UTF-8")
-  z <- data.table::fread(y, nrows = 1, skip = 0, header = FALSE)
-  # Check arrangement of the meta-data
-  ## horizontal?
-  headers <- c("SiteID", "Site.Timezone", "Data", "Timezone",
-               "Longitude", "Latitude", "Country")
-  ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
-  if (sum(ii) >= 5) { # horizontal table
-    meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
-    nskip <- 2
-  } else { # most likely two-row table with mixed columns "name|data|..|name|data|
-    # browser()
-    if (!any(grepl("itude", unlist(z[1,])))) {
-      # try to read the second rowLatitude
-      z2 <- data.table::fread(y, nrows = 1, skip = 1, header = FALSE)
-      z3 <- data.table::fread(y, nrows = 1, skip = 2, header = FALSE)
-      stopifnot(any(grepl("itude", unlist(z2[1,]))))
-      stopifnot(any(grepl("itude", unlist(z3[1,]))))
-      z <- cbind(z, z2, z3)
-      nskip <- 3
-    } else {
-      nskip <- 1
-    }
-    ii <- rep(c(T, F), length.out = ncol(z))
-    meta <- as.numeric(as.character(z)[!ii])
-    names(meta) <- as.character(z)[ii]
-    meta <- as.list(meta) %>% data.table::as.data.table()
-  }
+  m <- guess_header(y)
+  meta <- m$meta
+  nskip <- m$header_row - 1
+  # z1 <- data.table::fread(y, nrows = 1, skip = 0, header = FALSE)
+  # z2 <- data.table::fread(y, nrows = 1, skip = 1, header = FALSE)
+  # z3 <- data.table::fread(y, nrows = 1, skip = 2, header = FALSE)
+  # headers <- c("SiteID", "Site.Timezone", "Data", "Timezone",
+  #              "Longitude", "Latitude", "Country")
+  # if (ncol(z2) == ncol(z1)) { # two-row vertical table
+  #   if (nrow(z3) == ncol(z1)) {
+  #     z <- cbind(z1, z2, z3)
+  #     ii <- rep(c(T, F), length.out = ncol(z))
+  #     meta <- as.numeric(as.character(z)[!ii])
+  #     names(meta) <- as.character(z)[ii]
+  #     nskip <- 3
+  #   } else {
+  #     # check for headers
+  #     ## horizontal?
+  #     ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
+  #     if (sum(ii) >= 5 & ncol(z) <= 7) { # horizontal table
+  #       meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
+  #     } else {
+  #       ii <- rep(c(T, F), length.out = ncol(z))
+  #       meta <- as.numeric(as.character(z)[!ii])
+  #       names(meta) <- as.character(z)[ii]
+  #
+  #     }
+  #   }
+  # } else { #one row horizontal table
+  #   z <- z1
+  #   ii <- rep(c(T, F), length.out = ncol(z))
+  #   meta <- as.numeric(as.character(z)[!ii])
+  #   names(meta) <- as.character(z)[ii]
+  #   nskip <- 1
+  # }
+  meta <- as.list(meta) %>% data.table::as.data.table()
+  # y <- httr::content(x, "text", encoding = "UTF-8")
+  # z <- data.table::fread(y, nrows = 1, skip = 0, header = FALSE)
+  # # Check arrangement of the meta-data
+  # ## horizontal?
+  # headers <- c("SiteID", "Site.Timezone", "Data", "Timezone",
+  #              "Longitude", "Latitude", "Country")
+  # ii <- sapply(headers, function(x) any(grepl(x, z[1,], ignore.case = TRUE)))
+  # if (sum(ii) >= 5) { # horizontal table
+  #   meta <- data.table::fread(y, nrows = 1, skip = 0, header = TRUE)
+  #   nskip <- 2
+  # } else { # most likely two-row table with mixed columns "name|data|..|name|data|
+  #   # browser()
+  #   if (!any(grepl("itude", unlist(z[1,])))) {
+  #     # try to read the second rowLatitude
+  #     z2 <- data.table::fread(y, nrows = 1, skip = 1, header = FALSE)
+  #     z3 <- data.table::fread(y, nrows = 1, skip = 2, header = FALSE)
+  #     stopifnot(any(grepl("itude", unlist(z2[1,]))))
+  #     stopifnot(any(grepl("itude", unlist(z3[1,]))))
+  #     z <- cbind(z, z2, z3)
+  #     nskip <- 3
+  #   } else {
+  #     nskip <- 1
+  #   }
+  #   ii <- rep(c(T, F), length.out = ncol(z))
+  #   meta <- as.numeric(as.character(z)[!ii])
+  #   names(meta) <- as.character(z)[ii]
+  #   meta <- as.list(meta) %>% data.table::as.data.table()
+  # }
   # read data
   dat <- fread(text = y, skip = nskip, header = TRUE)
   return(list(meta = meta, data = dat))
@@ -448,3 +489,56 @@ if (F) {
   save(nrel_data, file = fname)
   return(file.exists(fname))
 }
+
+guess_header <- function(txt, rmax = 9) {
+  # txt - text responce (txt <- httr::content(x, "text", encoding = "UTF-8"))
+  rx <- lapply(0:rmax, function(r) {
+    # r - row
+    data.table::fread(txt, nrows = 1, skip = r, header = FALSE)
+  }) # row content
+  nc <- sapply(rx, ncol)
+  # find the main table (second) header (should be characters)
+  cr <- sapply(rx, function(x) all(!grepl("^[0-9]+$", x)))
+  cr <- which(cr)
+
+  if (length(cr) == 0) {
+    browser() # no header? investigate
+  } else if (length(cr) == 1) {
+    if (cr == 1) { # only one (the main?) table
+      meta = as.data.table(NULL)
+      # return(list(
+      #   meta = NULL,
+      #   header_row = cr
+      # ))
+    } else {
+      # decode non-horizontal table with meta-data
+      # stopifnot(nc[1:(cr-1)] == mean(nc[1:(cr-1)])) # check for consistency
+      meta <- as.data.table(NULL)
+      for (i in 1:(cr - 1)) {
+        jj <- sapply(rx[[i]], is.numeric)
+        cdata <- colnames(rx[[i]])[jj]
+        xi <- rx[[i]][, ..cdata]
+        cnames <- colnames(rx[[i]])[!jj]
+        names(xi) <- unlist(rx[[i]][, ..cnames])
+        meta <- rbind(meta, xi)
+      }
+      # return()
+    }
+    return(list(
+      meta = meta,
+      header_row = cr
+    ))
+  } else {
+    stopifnot(length(cr) <= 2) # do not expect more than 2 headers
+    stopifnot(cr[1] == 1) # expect the first header to be in the first row
+    # decode horizontal header
+    meta <- data.table::fread(txt, nrows = max(cr[2] - 2, 1), skip = 0,
+                              header = TRUE)
+    return(list(
+      meta = meta,
+      header_row = cr[2]
+    ))
+  }
+  return() # error reading meta-data
+}
+
